@@ -1,0 +1,1413 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un regalo cada día</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fbf6f1; --surface: #ffffff; --ink: #3a2a2e; --muted: #8a7479;
+    --accent: #c0485e; --accent-ink: #ffffff; --accent-soft: #f7e1e5;
+    --gold: #d9a441; --line: #eadcd6; --locked: #f1ebe7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1d1517; --surface: #2a1f22; --ink: #f3e7e9; --muted: #b09ca1;
+      --accent: #e46f86; --accent-ink: #1d1517; --accent-soft: #4a2a31;
+      --gold: #e8b85a; --line: #3d2e32; --locked: #241a1d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: Nunito, system-ui, sans-serif; line-height: 1.55; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 36px 16px 72px; }
+
+  header { text-align: center; margin-bottom: 28px; }
+  h1, h2, h3 { font-family: Fraunces, Georgia, serif; font-weight: 600; }
+  h1 { font-size: clamp(30px, 7vw, 46px); margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0; }
+  .progress { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden;
+              max-width: 360px; margin: 18px auto 6px; }
+  .progress span { display: block; height: 100%; width: 0; background: var(--accent);
+                   transition: width 1.2s ease; }
+  .progress-txt { font-size: 14px; color: var(--muted); }
+
+  /* La moto avanza por la barra según los días */
+  .carretera { position: relative; max-width: 360px; margin: 14px auto 6px; padding-top: 64px; }
+  .carretera .progress { margin: 0; max-width: none; }
+  .moto { position: absolute; bottom: 3px; left: 48px; width: 96px; height: auto;
+          transform: translateX(-50%) scaleX(-1); transition: left 1.6s ease;
+          filter: drop-shadow(0 3px 2px rgba(0,0,0,.18)); }
+
+  /* Personaje junto al regalo de hoy */
+  .hoy-fila { display: flex; align-items: flex-end; justify-content: center; gap: 8px 28px; flex-wrap: wrap; }
+  .hoy-contenido { min-width: 0; }
+  .personaje { height: 230px; width: auto; display: block; }
+  .personaje.salta { animation: salto .7s ease; }
+  @keyframes salto { 40% { transform: translateY(-18px) rotate(-3deg); } 70% { transform: translateY(0) rotate(2deg); } }
+  @media (max-width: 560px) {
+    .hoy-fila { flex-direction: column-reverse; align-items: center; }
+    .personaje { height: 170px; }
+  }
+
+  .hoy { background: var(--surface); border: 1px solid var(--line); border-radius: 22px;
+         padding: 28px 20px 30px; text-align: center; margin-bottom: 40px; }
+  .hoy h2 { margin: 0 0 4px; font-size: clamp(22px, 5vw, 30px); }
+  .hoy p { margin: 4px 0; color: var(--muted); }
+
+  /* Caja de regalo */
+  .caja { position: relative; width: 150px; height: 130px; margin: 18px auto 8px;
+          border: 0; background: none; padding: 0; cursor: pointer; display: block; }
+  .caja .base { position: absolute; bottom: 0; left: 12px; right: 12px; height: 86px;
+                background: var(--accent); border-radius: 8px; overflow: hidden; }
+  .caja .tapa { position: absolute; top: 22px; left: 0; right: 0; height: 30px;
+                background: var(--accent); filter: brightness(1.12); border-radius: 8px;
+                transition: transform .7s cubic-bezier(.4,-0.6,.5,1.6); transform-origin: 20% 100%; }
+  .caja .cinta { position: absolute; top: 0; bottom: 0; left: 50%; width: 20px; margin-left: -10px;
+                 background: var(--gold); }
+  .caja .lazo { position: absolute; left: 50%; top: -26px; width: 0; height: 0; }
+  .caja .lazo::before, .caja .lazo::after {
+    content: ""; position: absolute; top: 0; width: 34px; height: 28px;
+    border: 7px solid var(--gold); border-radius: 50% 50% 10% 50%; }
+  .caja .lazo::before { right: 0; transform: rotate(-12deg); }
+  .caja .lazo::after  { left: 0;  transform: scaleX(-1) rotate(-12deg); }
+  .caja:not(.abierta) { animation: menear 2.6s ease-in-out infinite; }
+  .caja.abierta .tapa { transform: translateY(-60px) rotate(-22deg); }
+  .caja:focus-visible { outline: 3px solid var(--gold); outline-offset: 8px; border-radius: 12px; }
+  @keyframes menear {
+    0%, 78%, 100% { transform: rotate(0); }
+    82% { transform: rotate(-5deg); } 86% { transform: rotate(5deg); }
+    90% { transform: rotate(-3deg); } 94% { transform: rotate(3deg); }
+  }
+  .pista { font-size: 14px; color: var(--muted); }
+
+  .btn { display: inline-block; margin-top: 14px; padding: 10px 20px; border-radius: 99px;
+         background: var(--accent); color: var(--accent-ink); border: 0; font: inherit;
+         font-weight: 700; cursor: pointer; text-decoration: none; }
+
+  /* Calendario */
+  .mes { margin-bottom: 26px; }
+  .mes h3 { margin: 0 0 10px; font-size: 20px; }
+  .dias { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 8px; }
+  .dia { aspect-ratio: 1; border-radius: 14px; border: 1px solid var(--line); background: var(--surface);
+         color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column;
+         align-items: center; justify-content: center; gap: 0; padding: 4px; transition: transform .15s; }
+  .dia:hover { transform: translateY(-2px); }
+  .dia .n { font-weight: 700; font-size: 15px; }
+  .dia .e { font-size: 18px; line-height: 1.2; }
+  .dia .f { font-size: 11px; color: var(--muted); }
+  .dia.bloq { background: var(--locked); color: var(--muted); cursor: default; }
+  .dia.bloq:hover { transform: none; }
+  .dia.bloq .e { filter: grayscale(1); opacity: .55; }
+  .dia.abierto { background: var(--accent-soft); }
+  .dia.propio { border: 2px solid var(--gold); }
+  .dia.es-hoy { border: 2px solid var(--accent); animation: latir 2s ease-in-out infinite; }
+  @keyframes latir { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 22%, transparent); } }
+
+  /* Tarjeta (modal) */
+  .velo { position: fixed; inset: 0; background: rgba(20, 10, 14, .55); display: none;
+          align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .velo.ver { display: flex; }
+  .tarjeta { background: var(--surface); border-radius: 22px; max-width: 520px; width: 100%;
+             max-height: 90vh; overflow: auto; padding: 26px 22px 22px; text-align: center;
+             box-shadow: 0 20px 60px rgba(0,0,0,.3); animation: aparecer .45s ease; }
+  @keyframes aparecer { from { transform: translateY(24px) scale(.96); opacity: 0; } }
+  .tarjeta .tipo { display: inline-block; font-size: 13px; font-weight: 700; padding: 4px 12px;
+                   border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+  .tarjeta .cuando { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .tarjeta h2 { margin: 10px 0 6px; font-size: 26px; }
+  .tarjeta .texto { white-space: pre-line; font-size: 17px; margin: 10px 0; }
+  .tarjeta.frase .texto { font-family: Fraunces, Georgia, serif; font-size: 22px; font-style: italic; }
+  .tarjeta img { max-width: 100%; border-radius: 14px; margin-top: 10px; }
+  .tarjeta iframe { width: 100%; border: 0; border-radius: 14px; margin-top: 10px; }
+  .tarjeta .video { aspect-ratio: 16 / 9; }
+  .vale { border: 2px dashed var(--gold); border-radius: 16px; padding: 14px; margin: 12px 0; }
+  .cerrar { background: none; color: var(--muted); border: 1px solid var(--line); margin-left: 8px; }
+
+  /* Juego de penales */
+  .partido { margin-top: 12px; }
+  .partido .pista { margin: 0 0 8px; }
+  .marcador { display: flex; justify-content: center; gap: 8px; font-size: 24px; margin-bottom: 8px; }
+  .cancha { position: relative; height: 270px; border-radius: 16px; overflow: hidden; cursor: crosshair;
+            user-select: none; -webkit-user-select: none; touch-action: manipulation;
+            background: repeating-linear-gradient(0deg, #4f9d53 0 30px, #47934b 30px 60px); }
+  .cancha .area { position: absolute; left: 4%; right: 4%; top: 0; height: 150px; border: 3px solid rgba(255,255,255,.7); border-top: 0; }
+  .cancha .arco { position: absolute; left: 12%; right: 12%; top: 16px; height: 100px;
+                  border: 6px solid #fff; border-bottom: 0; border-radius: 4px 4px 0 0;
+                  background: repeating-linear-gradient(45deg, rgba(255,255,255,.28) 0 2px, transparent 2px 11px),
+                              repeating-linear-gradient(-45deg, rgba(255,255,255,.28) 0 2px, transparent 2px 11px); }
+  .cancha .arquero { position: absolute; top: 52px; left: 50%; transform: translateX(-50%); font-size: 50px; line-height: 1; }
+  .cancha .balon { position: absolute; left: 50%; bottom: 22px; font-size: 36px; line-height: 1;
+                   transform: translate(-50%, 0); transition: left .45s ease-out, bottom .45s ease-out, transform .45s ease-out; }
+  .msg-juego { min-height: 28px; font-weight: 700; margin: 8px 0 0; font-size: 18px; }
+  .opciones { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+  .opciones .btn { margin-top: 0; }
+  .opciones .btn.no { background: var(--line); color: var(--muted); }
+  .revelado { font-family: Fraunces, Georgia, serif; font-size: 30px; color: var(--accent); margin: 14px 0 4px; animation: aparecer .5s ease; }
+  .tarjeta video { width: 100%; max-height: 62vh; border-radius: 14px; margin-top: 10px; background: #000; }
+
+  .premio.aparece { animation: aparecer .5s ease; }
+
+  /* Moto */
+  .pista-moto { display: block; width: 100%; height: 230px; border-radius: 16px; cursor: pointer; touch-action: manipulation; }
+
+  /* Rompecabezas */
+  .rompe { display: grid; gap: 2px; margin: 0 auto; background: var(--line); border-radius: 12px; overflow: hidden; }
+  .pieza { border: 0; padding: 0; background-repeat: no-repeat; cursor: pointer; }
+  .pieza.sel { outline: 4px solid var(--gold); outline-offset: -4px; filter: brightness(1.15); }
+  .rompe.listo { gap: 0; }
+
+  /* Memoria */
+  .memoria { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; max-width: 400px; margin: 0 auto; }
+  .naipe { position: relative; aspect-ratio: 1; perspective: 600px; border: 0; padding: 0; background: none; cursor: pointer; }
+  .naipe span { position: absolute; inset: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+                backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform .4s ease; }
+  .naipe .dorso { background: var(--accent); font-size: 22px; }
+  .naipe .frente { background: var(--accent-soft) center / cover no-repeat; font-size: 32px; transform: rotateY(180deg); }
+  .naipe.vuelta .dorso { transform: rotateY(180deg); }
+  .naipe.vuelta .frente { transform: rotateY(0); }
+  .naipe.ok .frente { box-shadow: 0 0 0 3px var(--gold); }
+
+  /* Globos */
+  .cielo-globos { position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(#bfe3ff, #f2f9ff); }
+  .globo { position: absolute; width: 56px; height: 68px; border: 0; padding: 0; cursor: pointer; font-size: 30px;
+           border-radius: 50% 50% 46% 46%; animation: flotar 3s ease-in-out infinite;
+           background: radial-gradient(circle at 34% 28%, rgba(255,255,255,.65), transparent 32%), var(--c); }
+  .globo::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 26px; background: rgba(0,0,0,.35); }
+  .globo.pum { background: none; animation: pum .5s ease forwards; }
+  .globo.pum::after { display: none; }
+  @keyframes flotar { 50% { transform: translateY(-8px); } }
+  @keyframes pum { to { transform: scale(1.7); opacity: 0; } }
+  .frase-armada { min-height: 30px; font-family: Fraunces, Georgia, serif; font-style: italic; font-size: 20px; }
+
+  /* Ruleta */
+  .ruleta { position: relative; width: 280px; height: 280px; margin: 4px auto 12px; }
+  .ruleta canvas { width: 280px; height: 280px; display: block; border-radius: 50%; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+  .ruleta .flecha { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); z-index: 1;
+                    font-size: 28px; color: var(--ink); text-shadow: 0 2px 0 var(--surface); }
+
+  /* Carta en sobre */
+  .sobre { position: relative; display: block; width: min(300px, 100%); aspect-ratio: 3 / 2; margin: 46px auto 14px;
+           border: 0; padding: 0; background: none; cursor: pointer; perspective: 800px; }
+  .sobre span { position: absolute; display: block; }
+  .sobre-fondo { inset: 0; background: #c97684; border-radius: 8px; }
+  .sobre-carta { left: 8%; right: 8%; top: 8%; height: 84%; z-index: 1; background: #fffaf5; border-radius: 6px;
+                 padding-top: 14px; text-align: center; font-family: Fraunces, Georgia, serif; font-size: 18px; color: #7a3b47;
+                 box-shadow: 0 2px 6px rgba(0,0,0,.15); transition: transform .8s ease .45s; }
+  .sobre-cuerpo { inset: 0; z-index: 2; background: #e7a1ad; border-radius: 8px;
+                  clip-path: polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%); }
+  .sobre-tapa { left: 0; right: 0; top: 0; height: 60%; z-index: 3; background: #f2b8c2;
+                clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top;
+                transition: transform .55s ease, z-index 0s linear .3s; }
+  .sello { left: 50%; top: 52%; z-index: 4; transform: translate(-50%, -50%); font-size: 32px; transition: opacity .25s; }
+  .sobre:not(.abierto) { animation: menear 2.6s ease-in-out infinite; }
+  .sobre.abierto .sello { opacity: 0; }
+  .sobre.abierto .sobre-tapa { transform: rotateX(180deg); z-index: 0; }
+  .sobre.abierto .sobre-carta { transform: translateY(-48%); }
+
+  /* Atrapa al pingüino */
+  .hielo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 330px; margin: 0 auto;
+           padding: 14px; border-radius: 18px; background: linear-gradient(#e9f6ff, #cfe8f7); }
+  .hueco { position: relative; aspect-ratio: 1; border: 0; padding: 0; border-radius: 50%; overflow: hidden; cursor: pointer;
+           background: radial-gradient(ellipse at 50% 60%, #1f4766 0 55%, #5f9cc4 56% 100%); }
+  .pingu { position: absolute; left: 50%; bottom: -70%; transform: translateX(-50%); font-size: 46px; line-height: 1; transition: bottom .15s ease-out; }
+  .hueco.sale .pingu { bottom: 10%; }
+  .hueco.atrapado { background: radial-gradient(ellipse at 50% 60%, #e46f86 0 55%, #f7c3cc 56% 100%); }
+
+  /* Laberinto */
+  .laberinto { display: block; width: 100%; max-width: 380px; margin: 0 auto; border-radius: 12px; touch-action: none; cursor: pointer; }
+  .flechas { display: grid; grid-template-columns: repeat(4, 52px); justify-content: center; gap: 8px; margin-top: 10px; }
+  .flechas .btn { margin: 0; padding: 10px 0; font-size: 18px; }
+
+  /* Tiro al arco */
+  .cancha-arquero { display: block; width: 100%; height: 290px; border-radius: 16px; touch-action: none; cursor: pointer; }
+
+  .tarjeta .texto.extra { font-family: Nunito, system-ui, sans-serif; font-style: normal; font-size: 17px; text-align: left;
+                          background: var(--accent-soft); border-radius: 14px; padding: 14px 16px; }
+
+  /* Arbolito */
+  .arbol { position: relative; width: min(300px, 100%); aspect-ratio: 4 / 5; margin: 0 auto; overflow: hidden; cursor: pointer;
+           border-radius: 18px; background: linear-gradient(#1c2848, #3b4a78); }
+  .arbol span { position: absolute; }
+  .arbol .copa { left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(#3fa45c, #1f6e3a);
+                 clip-path: polygon(50% 12%, 69% 36%, 61% 36%, 81% 59%, 71% 59%, 92% 82%, 8% 82%, 29% 59%, 19% 59%, 39% 36%, 31% 36%); }
+  .arbol .tronco { left: 44%; top: 82%; width: 12%; height: 9%; background: #7a4a2a; border-radius: 0 0 4px 4px; }
+  .arbol .estrella { left: 50%; top: 8%; transform: translate(-50%, -50%); font-size: 34px; color: #ffe08a; line-height: 1; }
+  .arbol .adorno { transform: translate(-50%, -50%); font-size: 22px; line-height: 1; pointer-events: none; }
+  .arbol .nieve { top: -10%; color: rgba(255,255,255,.75); font-size: 12px; pointer-events: none; animation: nevar linear infinite; }
+  @keyframes nevar { to { transform: translateY(560px); } }
+  .arbol.encendido .copa { filter: drop-shadow(0 0 14px rgba(255, 215, 110, .8)); }
+  .arbol.encendido .estrella { animation: brillo 1.2s ease-in-out infinite alternate; }
+  .arbol.encendido .adorno { animation: brillo 1.4s ease-in-out infinite alternate; }
+  @keyframes brillo { from { filter: drop-shadow(0 0 2px #fff6b0); } to { filter: drop-shadow(0 0 10px #ffd84a) brightness(1.25); } }
+  .paleta { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .adorno-btn { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--line); background: var(--surface); font-size: 22px; cursor: pointer; padding: 0; }
+  .adorno-btn.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  /* Ordena la frase */
+  .bolsa-palabras { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 6px; }
+  .palabra { border: 1px solid var(--line); background: var(--accent-soft); color: var(--ink); border-radius: 99px;
+             padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .palabra.usada { opacity: 0; pointer-events: none; }
+  .palabra.mal { animation: temblar .4s; }
+  @keyframes temblar { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+  /* Encuentra a Yuyu */
+  .buscar { position: relative; cursor: crosshair; border-radius: 14px; overflow: hidden; }
+  .buscar img { display: block; width: 100%; margin: 0; border-radius: 0; }
+  .buscar .aro { position: absolute; transform: translate(-50%, -50%); border: 4px solid #ffd84a; border-radius: 50%;
+                 box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 0 18px #ffd84a; animation: entrar .4s ease; }
+  .buscar .marca-mal { position: absolute; transform: translate(-50%, -50%); font-size: 24px; pointer-events: none; animation: salir .9s ease forwards; }
+  @keyframes entrar { from { opacity: 0; } }
+  @keyframes salir { to { opacity: 0; } }
+
+  /* Año nuevo */
+  .cuenta { margin-top: 14px; padding: 18px 14px; border-radius: 16px; background: #1f1733; color: #fff; }
+  .cuenta .reloj { font-family: Fraunces, Georgia, serif; font-size: 34px; font-weight: 600; }
+  .cuenta .pista { color: #d9cbff; margin: 4px 0 0; }
+  .noche { position: relative; width: min(320px, 100%); aspect-ratio: 4 / 5; margin: 0 auto; overflow: hidden; border-radius: 18px;
+           background: radial-gradient(ellipse at 50% 110%, #3b2a6b, #120c2a 70%); cursor: crosshair; }
+  .noche .titila { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff; animation: titilar 3s ease-in-out infinite alternate; pointer-events: none; }
+  @keyframes titilar { from { opacity: .2; } to { opacity: 1; } }
+  .noche .fugaz { position: absolute; transform: translate(-50%, -50%); font-size: 26px; line-height: 1; background: none; border: 0; padding: 10px; cursor: pointer;
+                  transition-property: left, top; transition-timing-function: linear; filter: drop-shadow(0 0 6px #ffe48a); }
+  .noche .fugaz.a-der::after, .noche .fugaz.a-izq::after { content: ""; position: absolute; top: 50%; width: 60px; height: 3px; border-radius: 3px; pointer-events: none; }
+  .noche .fugaz.a-der::after { right: 70%; transform: rotate(47deg); transform-origin: right center; background: linear-gradient(to left, rgba(255,240,180,.9), transparent); }
+  .noche .fugaz.a-izq::after { left: 70%; transform: rotate(-47deg); transform-origin: left center; background: linear-gradient(to right, rgba(255,240,180,.9), transparent); }
+  .noche .fugaz.atrapada { transition-timing-function: ease-in-out; font-size: 22px; pointer-events: none; }
+  .noche .fugaz.puesta { font-size: 22px; padding: 0; pointer-events: none; animation: aparecer .5s ease-out both; }
+  .noche.brilla .fugaz { animation: brillo 1.2s ease-in-out infinite alternate; }
+  .msg-juego.deseo { animation: aparecer .5s ease-out; color: var(--accent); font-weight: 700; }
+  .deseos { text-align: left; margin: 14px auto 0; max-width: 340px; padding-left: 22px; line-height: 1.6; }
+  .deseos li::marker { content: "🌠 "; }
+  .cuenta .btn { margin: 10px 4px 0; }
+  .recuerdos { position: fixed; inset: 0; z-index: 35; background: radial-gradient(circle at 50% 40%, #3a2566, #120c20 75%); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px 16px; text-align: center; transition: opacity .6s; }
+  .recuerdos.fuera { opacity: 0; }
+  .recuerdos .numero { font-family: Fraunces, Georgia, serif; font-size: clamp(64px, 18vw, 120px); font-weight: 700; line-height: 1; color: #ffd166; text-shadow: 0 0 24px rgba(255, 209, 102, .6); }
+  .recuerdos .numero.late { animation: golpe .5s ease-out; }
+  @keyframes golpe { from { transform: scale(1.8); opacity: 0; } }
+  .recuerdos .numero.final { font-size: clamp(40px, 11vw, 72px); }
+  .recuerdos .recuerdo { max-width: min(88vw, 460px); max-height: 52vh; border-radius: 18px; border: 4px solid #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, .5); object-fit: contain; background: #fff; }
+  .recuerdos .recuerdo.entra { animation: aparecer .45s ease-out; }
+  .recuerdos .pie { font-size: 20px; margin: 0; color: #f3ecff; min-height: 1.4em; }
+  .fuegos { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; }
+
+  .aviso { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(120px);
+           background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: 14px;
+           max-width: calc(100% - 32px); width: max-content; text-align: center;
+           transition: transform .35s ease; z-index: 20; }
+  .aviso.ver { transform: translateX(-50%) translateY(0); }
+
+  .corazon { position: fixed; pointer-events: none; z-index: 30; font-size: 22px;
+             animation: subir 1.6s ease-out forwards; }
+  @keyframes subir { to { transform: translate(var(--dx), -260px) rotate(var(--r)); opacity: 0; } }
+  .preview { background: var(--gold); color: #2a1f22; text-align: center; padding: 6px; font-size: 14px; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="preview" class="preview" hidden>Modo vista previa: todo está desbloqueado (solo tú deberías ver esto)</div>
+<div class="wrap">
+  <header>
+    <h1 id="titulo">Un regalo cada día</h1>
+    <p class="sub" id="subtitulo"></p>
+    <div class="carretera"><img id="moto" class="moto" alt="" hidden><div class="progress"><span id="barra"></span></div></div>
+    <div class="progress-txt" id="progreso-txt"></div>
+  </header>
+  <section class="hoy" id="hoy"><p>Cargando…</p></section>
+  <section id="calendario"></section>
+</div>
+
+<div class="velo" id="velo"><div class="tarjeta" id="tarjeta" role="dialog" aria-modal="true"></div></div>
+<div class="aviso" id="aviso" role="status"></div>
+
+<script src="regalos.js"></script>
+<script>
+(function () {
+  const MS = 86400000;
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+  const parseFecha = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const inicioDia = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const inicio = parseFecha(CONFIG.fechaInicio);
+  const total = CONFIG.totalDias || 366;
+  const fechaDeDia = (n) => { const d = new Date(inicio); d.setDate(d.getDate() + n - 1); return d; };
+  const diaDeFecha = (d) => Math.round((inicioDia(d) - inicio) / MS) + 1;
+  const fmt = new Intl.DateTimeFormat("es", { day: "numeric", month: "long" });
+  const fmtMes = new Intl.DateTimeFormat("es", { month: "long", year: "numeric" });
+
+  const TIPOS = {
+    carta:    { icono: "💌", nombre: "Carta" },
+    frase:    { icono: "✨", nombre: "Frase" },
+    recuerdo: { icono: "📸", nombre: "Recuerdo" },
+    cancion:  { icono: "🎵", nombre: "Canción" },
+    cupon:    { icono: "🎟️", nombre: "Cupón" },
+    video:    { icono: "🎬", nombre: "Video" },
+    sorpresa: { icono: "🎁", nombre: "Sorpresa" },
+    juego:    { icono: "⚽", nombre: "Juego" },
+  };
+
+  // ---------- Juego de penales: 3 goles -> pregunta -> video ----------
+  function montarJuego(tarjeta, r) {
+    const metas = r.goles || 3;
+    let goles = 0, ocupado = false, vel = 1.5;
+    const t0 = performance.now();
+    const caja = el("div", "partido");
+    const pista = el("p", "pista", "⚽ Tiene que meterme " + metas + " goles para descubrir su regalo. Toque dentro del arco donde quiera patear.");
+    const marc = el("div", "marcador");
+    const slots = [];
+    for (let i = 0; i < metas; i++) { const s = el("span", null, "⚪"); slots.push(s); marc.appendChild(s); }
+    const cancha = el("div", "cancha");
+    cancha.appendChild(el("div", "area"));
+    cancha.appendChild(el("div", "arco"));
+    const arquero = el("div", "arquero", "🙆‍♂️");
+    const balon = el("div", "balon", "⚽");
+    cancha.appendChild(arquero); cancha.appendChild(balon);
+    const msg = el("p", "msg-juego", "");
+    caja.appendChild(pista); caja.appendChild(marc); caja.appendChild(cancha); caja.appendChild(msg);
+    tarjeta.appendChild(caja);
+
+    const posArquero = () => 50 + 30 * Math.sin((performance.now() - t0) / 1000 * vel);
+    (function mover() {
+      if (!cancha.isConnected) return;
+      arquero.style.left = posArquero() + "%";
+      requestAnimationFrame(mover);
+    })();
+
+    function reiniciarBalon() {
+      balon.style.transition = "none";
+      balon.style.left = "50%"; balon.style.bottom = "22px"; balon.style.transform = "translate(-50%, 0)";
+      void balon.offsetWidth;
+      balon.style.transition = "";
+    }
+
+    cancha.addEventListener("click", (e) => {
+      if (ocupado || goles >= metas) return;
+      const rc = cancha.getBoundingClientRect();
+      const x = (e.clientX - rc.left) / rc.width * 100;
+      const yPx = e.clientY - rc.top;
+      ocupado = true; msg.textContent = "";
+      balon.style.left = x + "%";
+      balon.style.bottom = (rc.height - Math.max(yPx, 24) - 18) + "px";
+      balon.style.transform = "translate(-50%, 0) scale(.6) rotate(540deg)";
+      setTimeout(() => {
+        const dentro = x > 13 && x < 87 && yPx > 20 && yPx < 118;
+        if (!dentro) msg.textContent = "¡Afuera! 😅 Apunte al arco";
+        else if (Math.abs(posArquero() - x) < 10) msg.textContent = "¡Atajada! 🧤 Inténtelo otra vez";
+        else {
+          goles++; slots[goles - 1].textContent = "⚽"; vel += 0.45;
+          msg.textContent = goles < metas ? "¡GOOOOL! 🎉" : "¡GOOOOOOOOL! 🏆";
+          const b = balon.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top);
+        }
+        setTimeout(() => { reiniciarBalon(); ocupado = false; if (goles >= metas) pregunta(); }, 900);
+      }, 470);
+    });
+
+    function pregunta() {
+      caja.innerHTML = "";
+      caja.appendChild(el("p", "texto", r.pregunta || "Si me preguntan a quién prefiero… ¿Messi o Cristiano?"));
+      const ops = el("div", "opciones");
+      let quedan = 0;
+      (r.opciones || ["Messi 🐐", "Cristiano 🐐"]).forEach((nombre) => {
+        quedan++;
+        const b = el("button", "btn", nombre);
+        b.onclick = () => {
+          if (b.disabled) return;
+          b.disabled = true; b.classList.add("no"); b.textContent = "Mmm… no 😌";
+          if (--quedan === 0) setTimeout(revelar, 700);
+        };
+        ops.appendChild(b);
+      });
+      caja.appendChild(ops);
+      caja.appendChild(el("p", "pista", "Escoja una…"));
+    }
+
+    function revelar() {
+      caja.innerHTML = "";
+      caja.appendChild(el("p", "texto", r.pregunta || "Si me preguntan a quién prefiero… ¿Messi o Cristiano?"));
+      caja.appendChild(el("p", "revelado", r.respuesta || "Mi respuesta sería: usted ❤️"));
+      if (r.video) {
+        const v = el("video"); v.src = r.video; v.controls = true; v.playsInline = true;
+        caja.appendChild(v);
+        v.play().catch(() => {});
+      }
+      if (r.textoFinal) caja.appendChild(el("p", "texto", r.textoFinal));
+      const b = caja.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + 60);
+    }
+  }
+
+  // Regalos indexados por número de día
+  const porDia = {};
+  REGALOS.forEach((r) => {
+    const n = r.fecha ? diaDeFecha(parseFecha(r.fecha)) : r.dia;
+    if (n >= 1 && n <= total) porDia[n] = r;
+  });
+  const respaldo = (CONFIG.frasesDeRespaldo && CONFIG.frasesDeRespaldo.length) ? CONFIG.frasesDeRespaldo : ["Hoy también pienso en ti. ❤️"];
+  const regaloDe = (n) => porDia[n] || { tipo: "frase", texto: respaldo[(n - 1) % respaldo.length] };
+
+  // Recordar qué regalos ya abrió (solo en su dispositivo)
+  const KEY = "regalos-abiertos-" + CONFIG.fechaInicio;
+  let abiertos;
+  try { abiertos = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) { abiertos = new Set(); }
+  const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify([...abiertos])); } catch (e) {} };
+
+  // Hora del servidor (para que cambiar la fecha del celular no sirva de truco)
+  let desfase = 0;
+  async function obtenerAhora() {
+    try {
+      const r = await fetch(location.href.split("#")[0], { method: "HEAD", cache: "no-store" });
+      const d = r.headers.get("Date");
+      if (d) { const t = new Date(d); if (!isNaN(t)) { desfase = t.getTime() - Date.now(); return t; } }
+    } catch (e) {}
+    return new Date();
+  }
+
+  const params = new URLSearchParams(location.search);
+  const preview = params.get("preview") && params.get("preview") === CONFIG.clavePreview;
+
+  function aviso(txt) {
+    const a = $("#aviso"); a.textContent = txt; a.classList.add("ver");
+    clearTimeout(aviso.t); aviso.t = setTimeout(() => a.classList.remove("ver"), 3200);
+  }
+
+  function corazones(x, y) {
+    const simbolos = ["❤️", "💖", "✨", "💕", "🌸"];
+    for (let i = 0; i < 22; i++) {
+      const c = el("span", "corazon", simbolos[i % simbolos.length]);
+      c.style.left = x + "px"; c.style.top = y + "px";
+      c.style.setProperty("--dx", (Math.random() * 300 - 150) + "px");
+      c.style.setProperty("--r", (Math.random() * 120 - 60) + "deg");
+      c.style.animationDelay = (Math.random() * 0.25) + "s";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 2000);
+    }
+  }
+
+  function idYoutube(url) { const m = /(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/.exec(url || ""); return m && m[1]; }
+
+  const tipoDe = (r) => (r.juego && r.juego !== "sobre") ? TIPOS.juego : (TIPOS[r.tipo] || TIPOS.sorpresa);
+  const iconoDe = (r) => tipoDe(r).icono;
+  const pad = (x) => String(x).padStart(2, "0");
+  const COLORES = ["#e46f86", "#f2a541", "#5bb8d0", "#9b7fe0", "#6cc47c", "#f78fb3", "#5b8def", "#ff9f5a"];
+
+  // Contenido del regalo (texto, foto, enlaces). Si hay juego, se muestra al ganar.
+  function llenarPremio(premio, r) {
+    const cuerpo = r.tipo === "cupon" ? el("div", "vale") : premio;
+    if (r.tipo === "cupon") premio.appendChild(cuerpo);
+    if (r.cupon) cuerpo.appendChild(el("h2", null, r.cupon));
+    if (r.texto) cuerpo.appendChild(el("p", "texto", r.texto));
+    if (r.textoExtra) premio.appendChild(el("p", "texto extra", r.textoExtra));
+    if (r.foto) { const img = el("img"); img.src = r.foto; img.alt = r.titulo || "Recuerdo"; premio.appendChild(img); }
+    const esYoutube = /(^|\/\/|\.)(youtube\.com|youtu\.be)\//.test(r.enlace || "");
+    const yt = idYoutube(r.youtube || (esYoutube ? r.enlace : ""));
+    if (yt) {
+      const f = el("iframe", "video"); f.src = "https://www.youtube-nocookie.com/embed/" + yt;
+      f.allow = "autoplay; encrypted-media; picture-in-picture"; f.allowFullscreen = true;
+      premio.appendChild(f);
+    } else if (r.enlace && r.enlace.includes("open.spotify.com")) {
+      const f = el("iframe"); f.height = 152; f.allow = "encrypted-media";
+      f.src = r.enlace.replace(/\/intl-[a-z]+\//, "/").replace("open.spotify.com/", "open.spotify.com/embed/").replace("/embed/embed/", "/embed/");
+      premio.appendChild(f);
+    } else if (r.enlace) {
+      const a = el("a", "btn", r.textoBoton || "Abrir 💝"); a.href = r.enlace; a.target = "_blank"; a.rel = "noopener";
+      premio.appendChild(a); premio.appendChild(el("br"));
+    }
+  }
+
+  // ================= JUEGOS =================
+  const JUEGOS = {};
+
+  // 🏍️ La moto de Yuyu: saltar para atrapar corazones y esquivar conos
+  JUEGOS.moto = (zona, r, ganar) => {
+    const meta = r.corazones || 12;
+    zona.appendChild(el("p", "pista", "🏍️ Toque la pista para saltar. Atrape " + meta + " corazones y esquive los conos 🚧"));
+    const marc = el("div", "marcador", "❤️ 0 / " + meta);
+    const canvas = el("canvas", "pista-moto");
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(marc); zona.appendChild(canvas); zona.appendChild(msg);
+    const ctx = canvas.getContext("2d");
+    const img = new Image(); img.src = CONFIG.imagenMoto || "img/moto.png";
+    const H = 230, dpr = window.devicePixelRatio || 1;
+    let W = 300;
+    requestAnimationFrame(() => { W = canvas.clientWidth || 300; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); });
+    const suelo = H - 34;
+    const moto = { x: 20, y: 0, vy: 0, w: 92, h: 60 };
+    let objs = [], vel = 190, prox = 0.6, puntos = 0, empezo = false, fin = false, last = performance.now(), offset = 0, golpe = 0;
+    const saltar = (e) => { if (e) e.preventDefault(); if (fin) return; empezo = true; if (moto.y <= 0.5) moto.vy = 560; };
+    canvas.addEventListener("pointerdown", saltar);
+    const tecla = (e) => { if ((e.code === "Space" || e.key === "ArrowUp") && canvas.isConnected) saltar(e); };
+    document.addEventListener("keydown", tecla);
+    const contar = () => { marc.textContent = "❤️ " + puntos + " / " + meta; };
+    function generar() {
+      if (Math.random() < 0.3) objs.push({ tipo: "cono", x: W + 20, y: 0, s: 30 });
+      else objs.push({ tipo: "corazon", x: W + 20, y: Math.random() < 0.5 ? 6 : 80 + Math.random() * 40, s: 28 });
+    }
+    function dibujar() {
+      const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#ffe2cc"); g.addColorStop(1, "#f7a9b6");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "#4a4a4f"; ctx.fillRect(0, suelo, W, H - suelo);
+      ctx.fillStyle = "#fff"; for (let x = -offset; x < W; x += 40) ctx.fillRect(x, suelo + 15, 20, 4);
+      ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      objs.forEach((o) => { ctx.font = o.s + "px serif"; ctx.fillText(o.tipo === "corazon" ? "❤️" : "🚧", o.x, suelo - o.y + 4); });
+      if (img.complete && img.naturalWidth) {
+        ctx.save();
+        if (golpe > 0 && Math.floor(golpe * 10) % 2 === 0) ctx.globalAlpha = 0.35;
+        ctx.translate(moto.x + moto.w, suelo - moto.y - moto.h + 6); ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0, moto.w, moto.h); ctx.restore();
+      }
+      if (!empezo) {
+        ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = "#fff"; ctx.font = "bold 20px Nunito, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("Toque para arrancar 🏍️", W / 2, H / 2);
+      }
+    }
+    function paso(now) {
+      if (!canvas.isConnected) { document.removeEventListener("keydown", tecla); return; }
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (empezo && !fin) {
+        moto.vy -= 1500 * dt; moto.y = Math.max(0, moto.y + moto.vy * dt); if (moto.y === 0 && moto.vy < 0) moto.vy = 0;
+        prox -= dt; if (prox <= 0) { generar(); prox = 0.75 + Math.random() * 0.7; }
+        objs.forEach((o) => { o.x -= vel * dt; });
+        offset = (offset + vel * dt) % 40;
+        if (golpe > 0) golpe -= dt;
+        const mx1 = moto.x + 14, mx2 = moto.x + moto.w - 12, my1 = suelo - moto.y - moto.h + 14, my2 = suelo - moto.y;
+        objs = objs.filter((o) => {
+          const oy2 = suelo - o.y, oy1 = oy2 - o.s;
+          if (o.x < mx2 && o.x + o.s > mx1 && oy1 < my2 && oy2 > my1) {
+            if (o.tipo === "corazon") { puntos++; vel += 6; contar(); if (puntos >= meta) { fin = true; msg.textContent = "¡Lo logró! 🏁"; setTimeout(ganar, 900); } }
+            else { puntos = Math.max(0, puntos - 2); golpe = 0.6; contar(); msg.textContent = "¡Uy, el cono! 🚧 −2"; setTimeout(() => { if (!fin) msg.textContent = ""; }, 1200); }
+            return false;
+          }
+          return o.x > -50;
+        });
+      }
+      dibujar();
+      requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  };
+
+  // 🧩 Rompecabezas: tocar dos piezas para cambiarlas
+  JUEGOS.rompecabezas = (zona, r, ganar) => {
+    const N = r.piezas || 3, src = r.fotoJuego || r.foto;
+    zona.appendChild(el("p", "pista", "🧩 Toque dos piezas para cambiarlas de lugar y arme la foto."));
+    const tablero = el("div", "rompe"); zona.appendChild(tablero);
+    const msg = el("p", "msg-juego", ""); zona.appendChild(msg);
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      tablero.style.aspectRatio = img.naturalWidth + " / " + img.naturalHeight;
+      tablero.style.width = "min(100%, calc(56vh * " + ratio + "))";
+      tablero.style.gridTemplateColumns = "repeat(" + N + ", 1fr)";
+      let orden = [...Array(N * N).keys()];
+      do { orden.sort(() => Math.random() - 0.5); } while (orden.every((v, i) => v === i));
+      let sel = null, movs = 0;
+      function pintar() {
+        tablero.innerHTML = "";
+        orden.forEach((p, i) => {
+          const d = el("button", "pieza" + (sel === i ? " sel" : ""));
+          d.style.backgroundImage = "url('" + src + "')";
+          d.style.backgroundSize = (N * 100) + "% " + (N * 100) + "%";
+          d.style.backgroundPosition = ((p % N) * 100 / (N - 1)) + "% " + (Math.floor(p / N) * 100 / (N - 1)) + "%";
+          d.setAttribute("aria-label", "Pieza " + (i + 1));
+          d.onclick = () => {
+            if (tablero.classList.contains("listo")) return;
+            if (sel === null) { sel = i; pintar(); return; }
+            if (sel !== i) { [orden[sel], orden[i]] = [orden[i], orden[sel]]; movs++; msg.textContent = movs + " movimientos"; }
+            sel = null; pintar();
+            if (orden.every((v, k) => v === k)) { tablero.classList.add("listo"); msg.textContent = "¡Lo armó! 🧩"; setTimeout(ganar, 1100); }
+          };
+          tablero.appendChild(d);
+        });
+      }
+      pintar();
+    };
+    img.src = src;
+  };
+
+  // 🃏 Memoria: encontrar las parejas
+  JUEGOS.memoria = (zona, r, ganar) => {
+    const caras = (r.cartas || ["⚽", "🐧", "🍦", "🏍️", "🌅", "❤️"]).slice(0, 8);
+    zona.appendChild(el("p", "pista", "🃏 Encuentre las parejas. Toque dos cartas."));
+    const grid = el("div", "memoria"); zona.appendChild(grid);
+    const msg = el("p", "msg-juego", ""); zona.appendChild(msg);
+    const mazo = caras.concat(caras).sort(() => Math.random() - 0.5);
+    let abiertas = [], hechas = 0, bloqueo = false, intentos = 0;
+    mazo.forEach((cara) => {
+      const b = el("button", "naipe");
+      b.setAttribute("aria-label", "Carta");
+      const dorso = el("span", "dorso", "❤️");
+      const frente = el("span", "frente");
+      if (/\.(jpe?g|png|webp|gif)$/i.test(cara)) {
+        frente.style.backgroundImage = "url('" + cara + "')";
+        if (/\.png$/i.test(cara)) frente.style.backgroundSize = "contain";   // dibujos sin fondo: que se vean completos
+      } else frente.textContent = cara;
+      b.appendChild(dorso); b.appendChild(frente);
+      b.onclick = () => {
+        if (bloqueo || b.classList.contains("vuelta")) return;
+        b.classList.add("vuelta"); abiertas.push({ b, cara });
+        if (abiertas.length < 2) return;
+        intentos++;
+        const [a1, a2] = abiertas; abiertas = [];
+        if (a1.cara === a2.cara) {
+          hechas++; a1.b.classList.add("ok"); a2.b.classList.add("ok");
+          if (hechas === caras.length) { msg.textContent = "¡Las encontró todas en " + intentos + " intentos! 🎉"; setTimeout(ganar, 1200); return; }
+        } else {
+          bloqueo = true;
+          setTimeout(() => { a1.b.classList.remove("vuelta"); a2.b.classList.remove("vuelta"); bloqueo = false; }, 850);
+        }
+        msg.textContent = intentos + " intentos";
+      };
+      grid.appendChild(b);
+    });
+  };
+
+  // 🎈 Revienta los globos: cada globo suelta un pedacito del mensaje
+  JUEGOS.globos = (zona, r, ganar) => {
+    const palabras = (r.texto || "").split(/\s+/).filter(Boolean);
+    const n = Math.max(1, Math.min(r.globos || 8, palabras.length));
+    const trozos = [];
+    for (let i = 0; i < n; i++) trozos.push(palabras.slice(Math.round(i * palabras.length / n), Math.round((i + 1) * palabras.length / n)).join(" "));
+    zona.appendChild(el("p", "pista", "🎈 Reviente todos los globos para descubrir el mensaje."));
+    const cielo = el("div", "cielo-globos"); zona.appendChild(cielo);
+    const linea = el("p", "texto frase-armada", ""); zona.appendChild(linea);
+    const filas = Math.ceil(n / 4);
+    cielo.style.height = (filas * 100 + 30) + "px";
+    let siguiente = 0, quedan = n;
+    for (let i = 0; i < n; i++) {
+      const g = el("button", "globo");
+      g.style.setProperty("--c", COLORES[i % COLORES.length]);
+      g.style.left = (5 + (i % 4) * 24 + Math.random() * 5) + "%";
+      g.style.top = (Math.floor(i / 4) * 100 + 12 + Math.random() * 16) + "px";
+      g.style.animationDelay = (Math.random() * 2) + "s";
+      g.setAttribute("aria-label", "Globo");
+      g.onclick = () => {
+        if (g.classList.contains("pum")) return;
+        g.classList.add("pum"); g.textContent = "💥";
+        linea.textContent += (linea.textContent ? " " : "") + trozos[siguiente++];
+        if (--quedan === 0) setTimeout(ganar, 1500);
+      };
+      cielo.appendChild(g);
+    }
+  };
+
+  // 🎡 Ruleta de cupones: le toca uno al azar (y se queda guardado)
+  JUEGOS.ruleta = (zona, r) => {
+    const premios = r.premios || [];
+    const n = premios.length;
+    const clave = "ruleta-" + CONFIG.fechaInicio + "-" + (r.dia || r.fecha);
+    let guardado = null;
+    if (!preview) { try { guardado = localStorage.getItem(clave); } catch (e) {} }
+    function resultado(i, yaSalio) {
+      zona.innerHTML = "";
+      zona.appendChild(el("p", "pista", yaSalio ? "Esto fue lo que le salió en la ruleta:" : "¡Le salió…!"));
+      const v = el("div", "vale");
+      v.appendChild(el("h2", null, "Cupón para: " + (premios[i].cupon || premios[i].ruleta)));
+      if (r.texto) v.appendChild(el("p", "texto", r.texto));
+      zona.appendChild(v);
+    }
+    if (guardado !== null && premios[+guardado]) { resultado(+guardado, true); return; }
+    zona.appendChild(el("p", "pista", "🎡 Gire la ruleta y descubra qué cupón le toca."));
+    const wrap = el("div", "ruleta");
+    const cv = el("canvas"); const flecha = el("div", "flecha", "▼");
+    wrap.appendChild(flecha); wrap.appendChild(cv); zona.appendChild(wrap);
+    const btn = el("button", "btn", "¡Girar! 🎡"); zona.appendChild(btn);
+    const S = 280, dpr = window.devicePixelRatio || 1;
+    cv.width = S * dpr; cv.height = S * dpr;
+    const c = cv.getContext("2d"); c.scale(dpr, dpr);
+    const a = 2 * Math.PI / n;
+    for (let i = 0; i < n; i++) {
+      c.beginPath(); c.moveTo(S / 2, S / 2);
+      c.arc(S / 2, S / 2, S / 2 - 4, i * a - Math.PI / 2, (i + 1) * a - Math.PI / 2); c.closePath();
+      c.fillStyle = COLORES[i % COLORES.length]; c.fill();
+      c.strokeStyle = "#fff"; c.lineWidth = 3; c.stroke();
+      c.save(); c.translate(S / 2, S / 2); c.rotate(i * a + a / 2 - Math.PI / 2);
+      c.textAlign = "right"; c.textBaseline = "middle"; c.fillStyle = "#fff"; c.font = "bold 13px Nunito, sans-serif";
+      c.fillText(premios[i].ruleta, S / 2 - 14, 0); c.restore();
+    }
+    c.beginPath(); c.arc(S / 2, S / 2, 20, 0, 2 * Math.PI); c.fillStyle = "#fff"; c.fill();
+    c.font = "18px serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("❤️", S / 2, S / 2 + 1);
+    btn.onclick = () => {
+      btn.disabled = true;
+      const k = Math.floor(Math.random() * n);
+      const centro = (k * a + a / 2) * 180 / Math.PI;
+      const giro = 360 * 6 + (360 - centro) + (Math.random() * 0.6 - 0.3) * (a * 180 / Math.PI);
+      cv.style.transition = "transform 4.6s cubic-bezier(.15,.7,.2,1)";
+      cv.style.transform = "rotate(" + giro + "deg)";
+      setTimeout(() => {
+        if (!preview) { try { localStorage.setItem(clave, String(k)); } catch (e) {} }
+        const b = wrap.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + b.height / 2);
+        setTimeout(() => resultado(k, false), 700);
+      }, 4800);
+    };
+  };
+
+  // 💌 Carta en sobre: se abre al tocarlo
+  JUEGOS.sobre = (zona, r, ganar) => {
+    zona.appendChild(el("p", "pista", "💌 Toque el sobre para abrirlo"));
+    const s = el("button", "sobre");
+    s.setAttribute("aria-label", "Abrir el sobre");
+    s.appendChild(el("span", "sobre-fondo"));
+    s.appendChild(el("span", "sobre-carta", r.paraSobre || "Para " + CONFIG.nombre + " 💖"));
+    s.appendChild(el("span", "sobre-cuerpo"));
+    s.appendChild(el("span", "sobre-tapa"));
+    s.appendChild(el("span", "sello", "❤️"));
+    zona.appendChild(s);
+    s.onclick = () => {
+      if (s.classList.contains("abierto")) return;
+      s.classList.add("abierto");
+      const b = s.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + b.height / 2);
+      setTimeout(ganar, 1700);
+    };
+  };
+
+  // 🐧 Atrapa al pingüino: tocarlo cuando sale del hielo
+  JUEGOS.pinguino = (zona, r, ganar) => {
+    const meta = r.atrapar || 10;
+    zona.appendChild(el("p", "pista", "🐧 Atrape al pingüino " + meta + " veces. Cada uno es un abracito."));
+    const marc = el("div", "marcador", "🐧 0 / " + meta);
+    const hielo = el("div", "hielo");
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(marc); zona.appendChild(hielo); zona.appendChild(msg);
+    const huecos = [];
+    let activo = -1, puntos = 0, fin = false, t = null, vida = 1100;
+    for (let i = 0; i < 9; i++) {
+      const h = el("button", "hueco"); h.setAttribute("aria-label", "Hueco");
+      h.appendChild(el("span", "pingu", "🐧"));
+      h.onclick = () => {
+        if (i !== activo || fin) return;
+        clearTimeout(t); h.classList.remove("sale"); h.classList.add("atrapado");
+        setTimeout(() => h.classList.remove("atrapado"), 450);
+        activo = -1; puntos++; vida = Math.max(600, vida - 45);
+        marc.textContent = "🐧 " + puntos + " / " + meta;
+        msg.textContent = ["¡Abracito! 🤗", "¡Besito! 😘", "¡Lo atrapó! 🐧", "¡Otro abracito! ❤️"][puntos % 4];
+        if (puntos >= meta) { fin = true; msg.textContent = "¡Muchos abracitos de pingüino! 🐧❤️"; setTimeout(ganar, 1000); }
+        else setTimeout(salir, 350);
+      };
+      huecos.push(h); hielo.appendChild(h);
+    }
+    function salir() {
+      if (!hielo.isConnected || fin) return;
+      let i; do { i = Math.floor(Math.random() * 9); } while (i === activo);
+      activo = i; huecos[i].classList.add("sale");
+      t = setTimeout(() => {
+        huecos[i].classList.remove("sale"); activo = -1;
+        setTimeout(salir, 250 + Math.random() * 350);
+      }, vida);
+    }
+    setTimeout(salir, 800);
+  };
+
+  // 🌠 Estrella fugaz: atrapar estrellas, cada una trae un deseo, y al final forman un corazón
+  JUEGOS.estrellas = (zona, r, ganar) => {
+    const deseos = r.deseos && r.deseos.length ? r.deseos : ["Deseo que sea muy feliz ❤️"];
+    const meta = deseos.length;
+    zona.dataset.mantener = "1";
+    const pista = el("p", "pista", "🌠 Toque las estrellas fugaces cuando pasen. Cada una trae un deseo para usted.");
+    const marc = el("div", "marcador", "🌠 0 / " + meta);
+    const cielo = el("div", "noche");
+    for (let i = 0; i < 40; i++) {
+      const s = el("span", "titila");
+      s.style.left = (Math.random() * 100) + "%"; s.style.top = (Math.random() * 100) + "%";
+      s.style.animationDelay = (-Math.random() * 3) + "s";
+      cielo.appendChild(s);
+    }
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(pista); zona.appendChild(marc); zona.appendChild(cielo); zona.appendChild(msg);
+    // puntos del corazón (en %), 16 en total (sin los que se amontonan en las puntas)
+    const corazon = [];
+    for (let i = 0; i < 20; i++) {
+      if (i === 1 || i === 9 || i === 11 || i === 19) continue;
+      const t = i / 20 * 2 * Math.PI;
+      const x = 16 * Math.pow(Math.sin(t), 3), y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      corazon.push({ x: 50 + x * 2.4, y: 45 - y * 2.4 });
+    }
+    const lugares = deseos.map((_, i) => Math.round(i * corazon.length / meta) % corazon.length);
+    let atrapadas = 0, fin = false, vuelo = null;
+    function lanzar() {
+      if (!cielo.isConnected || fin) return;
+      const s = el("button", "fugaz", "⭐"); s.setAttribute("aria-label", "Estrella fugaz");
+      const izq = Math.random() < 0.5;
+      const x0 = izq ? -10 + Math.random() * 40 : 70 + Math.random() * 40, y0 = -8 + Math.random() * 25;
+      const x1 = izq ? x0 + 70 : x0 - 70, y1 = y0 + 75;
+      s.style.left = x0 + "%"; s.style.top = y0 + "%";
+      s.classList.add(izq ? "a-der" : "a-izq");
+      const dur = Math.max(1300, 2300 - atrapadas * 150);
+      s.style.transitionDuration = dur + "ms";
+      cielo.appendChild(s);
+      requestAnimationFrame(() => requestAnimationFrame(() => { s.style.left = x1 + "%"; s.style.top = y1 + "%"; }));
+      const quitar = setTimeout(() => { s.remove(); vuelo = setTimeout(lanzar, 300 + Math.random() * 500); }, dur);
+      s.onclick = (e) => {
+        e.stopPropagation();
+        if (fin || s.classList.contains("atrapada")) return;
+        clearTimeout(quitar);
+        const rc = cielo.getBoundingClientRect(), rs = s.getBoundingClientRect();
+        s.style.transitionDuration = "0ms";
+        s.style.left = ((rs.left + rs.width / 2 - rc.left) / rc.width * 100) + "%";
+        s.style.top = ((rs.top + rs.height / 2 - rc.top) / rc.height * 100) + "%";
+        s.className = "fugaz atrapada";
+        const p = corazon[lugares[atrapadas]];
+        requestAnimationFrame(() => requestAnimationFrame(() => { s.style.transitionDuration = "900ms"; s.style.left = p.x + "%"; s.style.top = p.y + "%"; }));
+        msg.textContent = deseos[atrapadas];
+        msg.classList.remove("deseo"); void msg.offsetWidth; msg.classList.add("deseo");
+        atrapadas++;
+        marc.textContent = "🌠 " + atrapadas + " / " + meta;
+        if (atrapadas >= meta) { fin = true; setTimeout(formarCorazon, 2200); }
+        else vuelo = setTimeout(lanzar, 1600);
+      };
+    }
+    cielo.addEventListener("click", () => { if (!fin) msg.textContent = ["¡Casi! Espere la próxima 🌠", "Se le escapó 😅", "¡Rapidito! ✨"][Math.floor(Math.random() * 3)]; });
+    function formarCorazon() {
+      if (!cielo.isConnected) return;
+      marc.remove();
+      corazon.forEach((p, i) => {
+        if (lugares.includes(i)) return;
+        const s = el("span", "fugaz puesta", "⭐");
+        s.style.left = p.x + "%"; s.style.top = p.y + "%"; s.style.animationDelay = (i * 0.08) + "s";
+        cielo.appendChild(s);
+      });
+      cielo.classList.add("brilla");
+      pista.textContent = "Sus deseos ya están en el cielo 💫";
+      msg.classList.remove("deseo"); msg.textContent = "";
+      const lista = el("ul", "deseos");
+      deseos.forEach((d) => lista.appendChild(el("li", null, d)));
+      zona.appendChild(lista);
+      setTimeout(ganar, 1800);
+    }
+    setTimeout(lanzar, 700);
+  };
+
+  // 🌀 Laberinto: llevar la moto hasta el corazón
+  JUEGOS.laberinto = (zona, r, ganar) => {
+    const N = r.tamano || 7;
+    zona.appendChild(el("p", "pista", "🌀 Lleve la moto hasta el corazón ❤️. Deslice el dedo sobre el laberinto o use las flechas."));
+    const canvas = el("canvas", "laberinto");
+    const flechas = el("div", "flechas");
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(canvas); zona.appendChild(flechas); zona.appendChild(msg);
+    const ctx = canvas.getContext("2d");
+    const img = new Image(); img.src = CONFIG.imagenMoto || "img/moto.png";
+    const idx = (x, y) => y * N + x;
+    const celdas = Array.from({ length: N * N }, () => ({ n: 1, e: 1, s: 1, w: 1, v: 0 }));
+    const pila = [[0, 0]]; celdas[0].v = 1;
+    const DIRS = [[0, -1, "n", "s"], [1, 0, "e", "w"], [0, 1, "s", "n"], [-1, 0, "w", "e"]];
+    while (pila.length) {
+      const [x, y] = pila[pila.length - 1];
+      const opc = DIRS.filter(([dx, dy]) => { const nx = x + dx, ny = y + dy; return nx >= 0 && ny >= 0 && nx < N && ny < N && !celdas[idx(nx, ny)].v; });
+      if (!opc.length) { pila.pop(); continue; }
+      const [dx, dy, a, b] = opc[Math.floor(Math.random() * opc.length)];
+      celdas[idx(x, y)][a] = 0; celdas[idx(x + dx, y + dy)][b] = 0; celdas[idx(x + dx, y + dy)].v = 1;
+      pila.push([x + dx, y + dy]);
+    }
+    const p = { x: 0, y: 0 }; let mira = 1, fin = false, S = 300;
+    const dpr = window.devicePixelRatio || 1;
+    function dibujar() {
+      const c = S / N;
+      ctx.fillStyle = "#fff6f2"; ctx.fillRect(0, 0, S, S);
+      ctx.font = Math.floor(c * 0.62) + "px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("❤️", (N - 0.5) * c, (N - 0.5) * c + 1);
+      ctx.strokeStyle = "#c0485e"; ctx.lineWidth = 3; ctx.lineCap = "round";
+      ctx.beginPath();
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const k = celdas[idx(x, y)], X = x * c, Y = y * c;
+        if (k.n) { ctx.moveTo(X, Y); ctx.lineTo(X + c, Y); }
+        if (k.w) { ctx.moveTo(X, Y); ctx.lineTo(X, Y + c); }
+        if (y === N - 1 && k.s) { ctx.moveTo(X, Y + c); ctx.lineTo(X + c, Y + c); }
+        if (x === N - 1 && k.e) { ctx.moveTo(X + c, Y); ctx.lineTo(X + c, Y + c); }
+      }
+      ctx.stroke();
+      if (img.complete && img.naturalWidth) {
+        const w = c * 0.86, h = w * img.naturalHeight / img.naturalWidth;
+        ctx.save(); ctx.translate((p.x + 0.5) * c, (p.y + 0.5) * c);
+        if (mira > 0) ctx.scale(-1, 1);
+        ctx.drawImage(img, -w / 2, -h / 2, w, h); ctx.restore();
+      } else { ctx.fillText("🏍️", (p.x + 0.5) * c, (p.y + 0.5) * c); }
+    }
+    function medir() {
+      S = Math.min(canvas.clientWidth || 300, 380);
+      canvas.style.height = S + "px";
+      canvas.width = S * dpr; canvas.height = S * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      dibujar();
+    }
+    requestAnimationFrame(medir);
+    img.onload = dibujar;
+    function mover(dx, dy) {
+      if (fin) return;
+      const lado = dx === 1 ? "e" : dx === -1 ? "w" : dy === 1 ? "s" : "n";
+      if (celdas[idx(p.x, p.y)][lado]) return;
+      if (dx) mira = dx;
+      let pasos = 0;
+      do {
+        p.x += dx; p.y += dy; pasos++;
+        if (p.x === N - 1 && p.y === N - 1) break;
+        const k = celdas[idx(p.x, p.y)];
+        const salidas = ["n", "e", "s", "w"].filter((l) => !k[l]).length;
+        if (salidas !== 2 || k[lado]) break;
+      } while (pasos < N * N);
+      dibujar();
+      if (p.x === N - 1 && p.y === N - 1) { fin = true; msg.textContent = "¡Llegó! ❤️"; setTimeout(ganar, 900); }
+    }
+    [["▲", 0, -1], ["◀", -1, 0], ["▼", 0, 1], ["▶", 1, 0]].forEach(([t, dx, dy]) => {
+      const b = el("button", "btn flecha", t); b.onclick = () => mover(dx, dy); flechas.appendChild(b);
+    });
+    let x0 = 0, y0 = 0;
+    canvas.addEventListener("pointerdown", (e) => { x0 = e.clientX; y0 = e.clientY; });
+    canvas.addEventListener("pointerup", (e) => {
+      let dx = e.clientX - x0, dy = e.clientY - y0;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) {   // un toque: moverse hacia donde tocó
+        const rc = canvas.getBoundingClientRect(), c = S / N;
+        dx = (e.clientX - rc.left) - (p.x + 0.5) * c; dy = (e.clientY - rc.top) - (p.y + 0.5) * c;
+      }
+      if (Math.abs(dx) > Math.abs(dy)) mover(Math.sign(dx), 0); else if (dy) mover(0, Math.sign(dy));
+    });
+    const tecla = (e) => {
+      if (!canvas.isConnected) { document.removeEventListener("keydown", tecla); return; }
+      const m = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+      if (m) { e.preventDefault(); mover(m[0], m[1]); }
+    };
+    document.addEventListener("keydown", tecla);
+  };
+
+  // 🧤 Tiro al arco: él es el arquero y ataja los balones de Mishe
+  JUEGOS.arquero = (zona, r, ganar) => {
+    const meta = r.atajadas || 5;
+    zona.appendChild(el("p", "pista", "🧤 Ahora usted es el arquero. Mueva el dedo sobre la cancha para atajar " + meta + " balones."));
+    const marc = el("div", "marcador", "🧤 0 / " + meta);
+    const canvas = el("canvas", "cancha-arquero");
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(marc); zona.appendChild(canvas); zona.appendChild(msg);
+    const ctx = canvas.getContext("2d");
+    const H = 290, dpr = window.devicePixelRatio || 1;
+    let W = 300;
+    const guante = { x: 150, obj: 150, w: 58 };
+    let balon = null, atajadas = 0, fin = false, espera = 1, dur = 1.3, last = performance.now();
+    requestAnimationFrame(() => {
+      W = canvas.clientWidth || 300; canvas.width = W * dpr; canvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      guante.x = guante.obj = W / 2;
+    });
+    const linea = H - 46;
+    const seguir = (e) => { const rc = canvas.getBoundingClientRect(); guante.obj = e.clientX - rc.left; };
+    canvas.addEventListener("pointerdown", (e) => { e.preventDefault(); seguir(e); });
+    canvas.addEventListener("pointermove", seguir);
+    const tecla = (e) => {
+      if (!canvas.isConnected) { document.removeEventListener("keydown", tecla); return; }
+      if (e.key === "ArrowLeft") { guante.obj -= 70; e.preventDefault(); }
+      if (e.key === "ArrowRight") { guante.obj += 70; e.preventDefault(); }
+    };
+    document.addEventListener("keydown", tecla);
+    function tirar() {
+      balon = { t: 0, x0: W / 2, y0: 52, tx: W * 0.18 + Math.random() * W * 0.64, curva: (Math.random() - 0.5) * W * 0.35, x: W / 2, y: 52 };
+    }
+    function dibujar() {
+      for (let i = 0; i < 8; i++) { ctx.fillStyle = i % 2 ? "#47934b" : "#4f9d53"; ctx.fillRect(0, i * H / 8, W, H / 8 + 1); }
+      ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = 3;
+      ctx.strokeRect(W * 0.04, linea - 70, W * 0.92, H);
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(W / 2, 62, 4, 0, 7); ctx.fill();
+      ctx.font = "30px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("🙋‍♀️", W / 2, 26);
+      // arco
+      const ax1 = W * 0.12, ax2 = W * 0.88;
+      ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 1;
+      for (let x = ax1; x <= ax2; x += 12) { ctx.beginPath(); ctx.moveTo(x, linea); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = linea; y <= H; y += 12) { ctx.beginPath(); ctx.moveTo(ax1, y); ctx.lineTo(ax2, y); ctx.stroke(); }
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(ax1, H); ctx.lineTo(ax1, linea); ctx.lineTo(ax2, linea); ctx.lineTo(ax2, H); ctx.stroke();
+      ctx.font = "46px serif"; ctx.fillText("🧤", guante.x, linea);
+      if (balon) { const t = Math.min(1, balon.t); ctx.font = Math.round(18 + 18 * t) + "px serif"; ctx.fillText("⚽", balon.x, balon.y); }
+    }
+    function paso(now) {
+      if (!canvas.isConnected) { document.removeEventListener("keydown", tecla); return; }
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (!fin) {
+        const d = guante.obj - guante.x, max = 650 * dt;
+        guante.x += Math.max(-max, Math.min(max, d));
+        guante.x = Math.max(30, Math.min(W - 30, guante.x));
+        if (!balon) { espera -= dt; if (espera <= 0) tirar(); }
+        else {
+          balon.t += dt / dur;
+          const t = Math.min(1, balon.t);
+          balon.x = balon.x0 + (balon.tx - balon.x0) * t + Math.sin(Math.PI * t) * balon.curva;
+          balon.y = balon.y0 + (linea - balon.y0) * t;
+          if (t >= 1) {
+            if (Math.abs(balon.x - guante.x) < guante.w / 2 + 14) {
+              atajadas++; dur = Math.max(0.75, dur - 0.1);
+              msg.textContent = ["¡Atajada! 🧤", "¡Qué manos! 🙌", "¡No pasa nada! 💪", "¡Arquerazo! 🧤"][atajadas % 4];
+              marc.textContent = "🧤 " + atajadas + " / " + meta;
+            } else msg.textContent = "¡Gol de Mishe! 😜 Ataje el siguiente";
+            balon = null; espera = 0.9;
+            if (atajadas >= meta) { fin = true; msg.textContent = "¡Qué arquerazo! 🏆"; setTimeout(ganar, 1000); }
+          }
+        }
+      }
+      dibujar();
+      requestAnimationFrame(paso);
+    }
+    requestAnimationFrame(paso);
+  };
+
+  // 🎄 Decorar el arbolito: poner adornos y la estrella para encender las luces
+  JUEGOS.arbolito = (zona, r, ganar) => {
+    const meta = r.adornos || 8;
+    zona.dataset.mantener = "1";   // el arbolito decorado se queda a la vista
+    const pista = el("p", "pista", "🎄 Escoja un adorno y toque el arbolito para colgarlo. Ponga " + meta + " adornos y luego la estrella.");
+    const marc = el("div", "marcador", "🎄 0 / " + meta);
+    const arbol = el("div", "arbol");
+    arbol.appendChild(el("span", "copa"));
+    arbol.appendChild(el("span", "tronco"));
+    const estrella = el("span", "estrella", "☆");
+    arbol.appendChild(estrella);
+    for (let i = 0; i < 14; i++) {
+      const n = el("span", "nieve", "❄");
+      n.style.left = (Math.random() * 96) + "%"; n.style.animationDelay = (-Math.random() * 6) + "s";
+      n.style.animationDuration = (5 + Math.random() * 4) + "s";
+      arbol.appendChild(n);
+    }
+    const paleta = el("div", "paleta");
+    const opciones = ["🔴", "🟡", "🔵", "🎀", "🔔", "🍬", "❤️"];
+    let elegido = opciones[0], puestos = 0, fin = false;
+    opciones.forEach((o, i) => {
+      const b = el("button", "adorno-btn" + (i === 0 ? " sel" : ""), o);
+      b.setAttribute("aria-label", "Adorno " + o);
+      b.onclick = () => { elegido = o; paleta.querySelectorAll(".adorno-btn").forEach((x) => x.classList.remove("sel")); b.classList.add("sel"); };
+      paleta.appendChild(b);
+    });
+    const btnEstrella = el("button", "btn", "⭐ Poner la estrella");
+    btnEstrella.hidden = true;
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(pista); zona.appendChild(marc); zona.appendChild(arbol); zona.appendChild(paleta); zona.appendChild(btnEstrella); zona.appendChild(msg);
+    arbol.addEventListener("click", (e) => {
+      if (fin) return;
+      const rc = arbol.getBoundingClientRect();
+      const x = (e.clientX - rc.left) / rc.width * 100, y = (e.clientY - rc.top) / rc.height * 100;
+      const mitad = (y - 14) / 68 * 40;
+      if (y < 18 || y > 80 || Math.abs(x - 50) > mitad) { msg.textContent = "Cuélguelo en las ramitas 🌲"; return; }
+      const a = el("span", "adorno", elegido);
+      a.style.left = x + "%"; a.style.top = y + "%"; a.style.animationDelay = (Math.random() * 1.5) + "s";
+      arbol.appendChild(a);
+      puestos++; msg.textContent = "";
+      marc.textContent = "🎄 " + Math.min(puestos, meta) + " / " + meta;
+      if (puestos >= meta) { btnEstrella.hidden = false; pista.textContent = "¡Precioso! Ahora póngale la estrella ⭐ (o siga decorando)"; }
+    });
+    btnEstrella.onclick = () => {
+      if (fin) return;
+      fin = true; btnEstrella.remove(); paleta.remove(); marc.remove();
+      estrella.textContent = "⭐"; arbol.classList.add("encendido");
+      pista.textContent = "¡Quedó hermoso! 🎄✨";
+      const b = arbol.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + 20);
+      setTimeout(ganar, 1800);
+    };
+  };
+
+  // 🔀 Ordena la frase: tocar las palabras en el orden correcto
+  JUEGOS.ordenar = (zona, r, ganar) => {
+    const palabras = (r.texto || "").split(/\s+/).filter(Boolean);
+    zona.appendChild(el("p", "pista", "🔀 Toque las palabras en orden para armar la frase."));
+    const linea = el("p", "texto frase-armada", "");
+    const bolsa = el("div", "bolsa-palabras");
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(linea); zona.appendChild(bolsa); zona.appendChild(msg);
+    let mezcla = palabras.map((w, k) => ({ w, k }));
+    do { mezcla.sort(() => Math.random() - 0.5); } while (palabras.length > 1 && mezcla.every((o, k) => o.k === k));
+    let i = 0;
+    mezcla.forEach((o) => {
+      const b = el("button", "palabra", o.w);
+      b.onclick = () => {
+        if (b.disabled || i >= palabras.length) return;
+        if (o.w === palabras[i]) {
+          b.disabled = true; b.classList.add("usada");
+          linea.textContent += (i ? " " : "") + o.w; i++; msg.textContent = "";
+          if (i === palabras.length) { msg.textContent = "¡La armó! 💕"; setTimeout(ganar, 1300); }
+        } else {
+          b.classList.remove("mal"); void b.offsetWidth; b.classList.add("mal");
+          msg.textContent = ["Esa no va ahí 😅", "Mmm, todavía no 🤔", "¡Casi! Pruebe otra 💭"][Math.floor(Math.random() * 3)];
+        }
+      };
+      bolsa.appendChild(b);
+    });
+  };
+
+  // 🔎 Encuentra a Yuyu: tocarlo en la foto
+  JUEGOS.encuentra = (zona, r, ganar) => {
+    const z = r.buscar || { x: 50, y: 50, rx: 10, ry: 10 };
+    zona.appendChild(el("p", "pista", "🔎 ¿Dónde está Yuyu? Tóquelo en la foto."));
+    const marco = el("div", "buscar");
+    const img = el("img"); img.src = r.fotoJuego || r.foto; img.alt = "Foto para buscar a Yuyu";
+    marco.appendChild(img);
+    const msg = el("p", "msg-juego", "");
+    zona.appendChild(marco); zona.appendChild(msg);
+    let fin = false, fallos = 0;
+    const frases = ["Ese no es 😅", "Mmm, ¿seguro? 🤔", "¡Frío, frío! 🥶", "¿No se reconoce? 😂", "Busque bien 👀"];
+    marco.addEventListener("click", (e) => {
+      if (fin) return;
+      const rc = marco.getBoundingClientRect();
+      const x = (e.clientX - rc.left) / rc.width * 100, y = (e.clientY - rc.top) / rc.height * 100;
+      const d = Math.pow((x - z.x) / z.rx, 2) + Math.pow((y - z.y) / z.ry, 2);
+      if (d <= 1) {
+        fin = true;
+        const aro = el("span", "aro");
+        aro.style.left = z.x + "%"; aro.style.top = z.y + "%"; aro.style.width = (z.rx * 2.2) + "%"; aro.style.height = (z.ry * 2.2) + "%";
+        marco.appendChild(aro);
+        msg.textContent = "¡Ahí está mi Yuyu! ❤️";
+        corazones(e.clientX, e.clientY);
+        setTimeout(ganar, 1600);
+      } else {
+        const m = el("span", "marca-mal", "❌");
+        m.style.left = x + "%"; m.style.top = y + "%";
+        marco.appendChild(m); setTimeout(() => m.remove(), 900);
+        msg.textContent = frases[fallos++ % frases.length];
+      }
+    });
+  };
+
+  // 🎆 31 de diciembre: cuenta regresiva y fuegos artificiales
+  function fuegos() {
+    const cv = el("canvas", "fuegos"); document.body.appendChild(cv);
+    const dpr = window.devicePixelRatio || 1, W = innerWidth, H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    const c = cv.getContext("2d"); c.scale(dpr, dpr);
+    const colores = ["#ff5d73", "#ffd166", "#06d6a0", "#4cc9f0", "#f72585", "#ffffff", "#b388ff"];
+    const parts = [], cohetes = [];
+    const t0 = performance.now(); let last = t0, prox = 0;
+    function explotar(x, y) {
+      const col = colores[Math.floor(Math.random() * colores.length)];
+      for (let i = 0; i < 70; i++) { const ang = Math.random() * Math.PI * 2, v = 60 + Math.random() * 220; parts.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, vida: 1, col }); }
+    }
+    function paso(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now; const t = now - t0;
+      c.clearRect(0, 0, W, H);
+      prox -= dt;
+      if (t < 6000 && prox <= 0) { cohetes.push({ x: W * (0.15 + Math.random() * 0.7), y: H, vy: -(H * 1.2 + Math.random() * H * 0.3), alto: H * (0.12 + Math.random() * 0.35) }); prox = 0.3 + Math.random() * 0.4; }
+      for (let i = cohetes.length - 1; i >= 0; i--) {
+        const k = cohetes[i]; k.y += k.vy * dt; k.vy += H * 0.8 * dt;
+        c.fillStyle = "#fff"; c.fillRect(k.x - 1.5, k.y, 3, 9);
+        if (k.y <= k.alto || k.vy >= 0) { explotar(k.x, k.y); cohetes.splice(i, 1); }
+      }
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.vx *= 0.985; p.vy = p.vy * 0.985 + 90 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vida -= dt * 0.7;
+        if (p.vida <= 0) { parts.splice(i, 1); continue; }
+        c.globalAlpha = p.vida; c.fillStyle = p.col; c.beginPath(); c.arc(p.x, p.y, 2.2, 0, 2 * Math.PI); c.fill();
+      }
+      c.globalAlpha = 1;
+      if (t < 6000 || parts.length || cohetes.length) requestAnimationFrame(paso); else cv.remove();
+    }
+    requestAnimationFrame(paso);
+  }
+
+  // 🔢 Cuenta del 10 al 0, cada número con un recuerdo; en el 0 explotan los fuegos
+  let contando = false;
+  function cuentaConRecuerdos(recuerdos, pasoMs, anio, desde) {
+    if (contando) return; contando = true;
+    const capa = el("div", "recuerdos");
+    const num = el("div", "numero"), foto = el("img", "recuerdo"), pie = el("p", "pie");
+    foto.alt = "";
+    capa.appendChild(num); capa.appendChild(foto); capa.appendChild(pie);
+    document.body.appendChild(capa);
+    let i = desde == null ? 10 : desde;
+    function paso() {
+      if (i > 0) {
+        const rec = recuerdos[10 - i] || {};
+        num.textContent = i;
+        num.classList.remove("late"); void num.offsetWidth; num.classList.add("late");
+        if (rec.foto) { foto.src = rec.foto; foto.hidden = false; } else foto.hidden = true;
+        foto.classList.remove("entra"); void foto.offsetWidth; foto.classList.add("entra");
+        pie.textContent = rec.texto || "";
+        i--; setTimeout(paso, pasoMs);
+      } else {
+        num.textContent = "¡Feliz " + anio + "!";
+        num.classList.add("final");
+        foto.hidden = true; pie.textContent = "🎆❤️🎆";
+        fuegos();
+        setTimeout(() => { capa.classList.add("fuera"); setTimeout(() => { capa.remove(); contando = false; }, 600); }, 4500);
+      }
+    }
+    paso();
+  }
+
+  function montarAnioNuevo(tarjeta, r) {
+    const objetivo = new Date(r.cuentaRegresiva).getTime();
+    const anio = new Date(objetivo).getFullYear();
+    const box = el("div", "cuenta");
+    const reloj = el("div", "reloj"), sub = el("p", "pista", "");
+    box.appendChild(reloj); box.appendChild(sub);
+    const recuerdos = r.recuerdos || [];
+    recuerdos.forEach(x => { if (x.foto) new Image().src = x.foto; });   // precargar
+    if (recuerdos.length) {
+      const ver = el("button", "btn", "🔢 Ver la cuenta con recuerdos");
+      ver.onclick = () => cuentaConRecuerdos(recuerdos, 1600, anio);
+      box.appendChild(ver);
+    }
+    const btn = el("button", "btn", "🎆 Lanzar fuegos artificiales");
+    btn.onclick = fuegos;
+    box.appendChild(btn);
+    tarjeta.appendChild(box);
+    let lanzado = false;
+    (function tic() {
+      if (!box.isConnected) return;
+      const falta = objetivo - (Date.now() + desfase);
+      // a la medianoche de verdad: los últimos 10 segundos se cuentan con recuerdos
+      if (recuerdos.length && !lanzado && falta > 0 && falta <= 10000) {
+        lanzado = true;
+        cuentaConRecuerdos(recuerdos, 1000, anio, Math.ceil(falta / 1000));
+      }
+      if (falta > 0) {
+        const h = Math.floor(falta / 3600000), m = Math.floor(falta / 60000) % 60, s = Math.floor(falta / 1000) % 60;
+        reloj.textContent = (h >= 24 ? Math.floor(h / 24) + "d " : "") + pad(h % 24) + ":" + pad(m) + ":" + pad(s);
+        sub.textContent = "para el " + new Date(objetivo).getFullYear() + " 🎆";
+      } else {
+        reloj.textContent = "¡Feliz Año Nuevo! 🎆";
+        sub.textContent = r.mensajeAnioNuevo || "";
+        if (!lanzado) { lanzado = true; fuegos(); }
+      }
+      setTimeout(tic, 1000);
+    })();
+  }
+
+  function mostrarTarjeta(n) {
+    const r = regaloDe(n);
+    const t = tipoDe(r);
+    const tarjeta = $("#tarjeta");
+    tarjeta.innerHTML = "";
+    tarjeta.className = "tarjeta " + (r.tipo || "");
+    tarjeta.appendChild(el("span", "tipo", t.icono + " " + t.nombre));
+    tarjeta.appendChild(el("div", "cuando", "Día " + n + " · " + fmt.format(fechaDeDia(n))));
+    if (r.titulo) tarjeta.appendChild(el("h2", null, r.titulo));
+
+    if (r.juego === "penales") {
+      montarJuego(tarjeta, r);   // los penales tienen su propia sorpresa al final
+    } else {
+      const premio = el("div", "premio");
+      llenarPremio(premio, r);
+      const juego = JUEGOS[r.juego];
+      if (juego) {
+        premio.hidden = true;
+        const zona = el("div", "partido");
+        tarjeta.appendChild(zona); tarjeta.appendChild(premio);
+        juego(zona, r, () => {
+          if (!zona.isConnected) return;
+          if (!zona.dataset.mantener) zona.remove();
+          premio.hidden = false; premio.classList.add("aparece");
+          const b = premio.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + 40);
+        });
+      } else tarjeta.appendChild(premio);
+      if (r.cuentaRegresiva) montarAnioNuevo(tarjeta, r);
+    }
+
+    const cerrar = el("button", "btn cerrar", "Cerrar");
+    cerrar.onclick = cerrarTarjeta;
+    tarjeta.appendChild(cerrar);
+    $("#velo").classList.add("ver");
+    cerrar.focus({ preventScroll: true });
+    tarjeta.scrollTop = 0;
+  }
+  function cerrarTarjeta() { $("#velo").classList.remove("ver"); $("#tarjeta").innerHTML = ""; }
+  $("#velo").addEventListener("click", (e) => { if (e.target.id === "velo") cerrarTarjeta(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") cerrarTarjeta(); });
+
+  function abrir(n) {
+    abiertos.add(n); guardar();
+    const celda = document.querySelector('[data-dia="' + n + '"]');
+    if (celda) { celda.classList.add("abierto"); celda.querySelector(".e").textContent = iconoDe(regaloDe(n)); }
+    mostrarTarjeta(n);
+  }
+
+  function render(hoy) {
+    $("#titulo").textContent = "Para " + CONFIG.nombre;
+    $("#subtitulo").textContent = "Un regalo cada día, " + CONFIG.de;
+    const visto = Math.min(Math.max(hoy, 0), total);
+    const pct = visto / total;
+    const moto = $("#moto");
+    if (CONFIG.imagenMoto) { moto.src = CONFIG.imagenMoto; moto.hidden = false; }
+    requestAnimationFrame(() => {
+      $("#barra").style.width = (pct * 100) + "%";
+      moto.style.left = "calc(48px + (100% - 96px) * " + pct + ")";
+    });
+    $("#progreso-txt").textContent = visto + " de " + total + " regalos desbloqueados";
+
+    // Sección "hoy" (con el personaje al lado si hay imagen)
+    const contenedor = $("#hoy"); contenedor.innerHTML = "";
+    const fila = el("div", "hoy-fila");
+    const s = el("div", "hoy-contenido");
+    let personaje = null;
+    if (CONFIG.imagenPersonaje) {
+      personaje = el("img", "personaje"); personaje.src = CONFIG.imagenPersonaje; personaje.alt = "";
+      fila.appendChild(personaje);
+    }
+    fila.appendChild(s); contenedor.appendChild(fila);
+    if (hoy < 1) {
+      const faltan = 1 - hoy;
+      s.appendChild(el("h2", null, "Algo especial se acerca ✨"));
+      s.appendChild(el("p", null, "Tu primer regalo llega el " + fmt.format(inicio) + ". " + (faltan === 1 ? "¡Falta 1 día!" : "Faltan " + faltan + " días.")));
+    } else if (hoy > total) {
+      s.appendChild(el("h2", null, "Fueron " + total + " días de regalos 💖"));
+      s.appendChild(el("p", null, CONFIG.mensajeFinal || "Gracias por un año precioso."));
+    } else {
+      s.appendChild(el("p", null, "Día " + hoy + " de " + total + " · " + fmt.format(fechaDeDia(hoy))));
+      s.appendChild(el("h2", null, abiertos.has(hoy) ? "Ya abriste tu regalo de hoy" : "Tienes un regalo esperándote"));
+      const caja = el("button", "caja" + (abiertos.has(hoy) ? " abierta" : ""));
+      caja.setAttribute("aria-label", "Abrir el regalo de hoy");
+      caja.innerHTML = '<div class="base"><div class="cinta"></div></div><div class="tapa"><div class="cinta"></div><div class="lazo"></div></div>';
+      caja.onclick = () => {
+        const yaAbierta = caja.classList.contains("abierta");
+        caja.classList.add("abierta");
+        if (!yaAbierta) {
+          const b = caja.getBoundingClientRect(); corazones(b.left + b.width / 2, b.top + 30);
+          if (personaje) personaje.classList.add("salta");
+          s.querySelector("h2").textContent = "Ya abriste tu regalo de hoy";
+          setTimeout(() => abrir(hoy), 750);
+        } else abrir(hoy);
+      };
+      s.appendChild(caja);
+      s.appendChild(el("p", "pista", abiertos.has(hoy) ? "Toca la caja para verlo otra vez" : "Toca la caja para abrirlo"));
+    }
+
+    // Calendario por meses
+    const cal = $("#calendario"); cal.innerHTML = "";
+    let mesActual = null, grid = null;
+    for (let n = 1; n <= total; n++) {
+      const f = fechaDeDia(n);
+      const claveMes = f.getFullYear() + "-" + f.getMonth();
+      if (claveMes !== mesActual) {
+        mesActual = claveMes;
+        const nombreMes = fmtMes.format(f);
+        const m = el("div", "mes"); m.appendChild(el("h3", null, nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1)));
+        grid = el("div", "dias"); m.appendChild(grid); cal.appendChild(m);
+      }
+      const bloq = n > hoy;
+      const c = el("button", "dia" + (bloq ? " bloq" : "") + (n === hoy ? " es-hoy" : "") + (abiertos.has(n) ? " abierto" : ""));
+      c.dataset.dia = n;
+      c.appendChild(el("span", "n", n));
+      const marcar = preview && porDia[n];   // en vista previa, resalta los días con regalo propio
+      if (marcar) c.classList.add("propio");
+      c.appendChild(el("span", "e", bloq ? "🔒" : (abiertos.has(n) || marcar) ? iconoDe(regaloDe(n)) : "🎁"));
+      c.appendChild(el("span", "f", f.getDate() + "/" + (f.getMonth() + 1)));
+      c.setAttribute("aria-label", "Día " + n + ", " + fmt.format(f) + (bloq ? ", bloqueado" : ""));
+      c.onclick = () => {
+        if (n > hoy) {
+          const faltan = n - hoy;
+          aviso("Paciencia 💌 Este regalo se abre el " + fmt.format(f) + (faltan === 1 ? " (¡mañana!)" : " (faltan " + faltan + " días)"));
+        } else abrir(n);
+      };
+      grid.appendChild(c);
+    }
+  }
+
+  obtenerAhora().then((ahora) => {
+    let hoy = diaDeFecha(ahora);
+    if (preview) {
+      $("#preview").hidden = false;
+      hoy = params.get("dia") ? Number(params.get("dia")) : total;
+    }
+    render(hoy);
+  });
+})();
+</script>
+</body>
+</html>
