@@ -16,6 +16,11 @@ const CONFIG = {
   // o simula un día con ?preview=yuyu&dia=10
   clavePreview: "yuyu",
 
+  // Contraseña para entrar al calendario (no importan mayúsculas, tildes ni espacios).
+  // Déjala en "" para quitarla. Solo se pide una vez en cada celular.
+  contrasena: "coqueta",
+  pistaContrasena: "La contraseña es la canción que siempre me recuerda a usted",
+
   // Tus dibujos (carpeta "img"). Déjalo en "" para no mostrar alguno.
   imagenPersonaje: "img/personaje.png",  // aparece junto al regalo del día
   imagenMoto: "img/moto.png",            // avanza por la barra conforme pasan los días
